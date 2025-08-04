@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RFM Customer Analytics | Segmentação Inteligente</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #667eea;
+            --primary-dark: #5a67d8;
+            --secondary-color: #764ba2;
+            --success-color: #48bb78;
+            --warning-color: #ed8936;
+            --error-color: #f56565;
+            --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --card-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            --text-primary: #2d3748;
+            --text-secondary: #718096;
+            --border-radius: 12px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-gradient);
+            min-height: 100vh;
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .background-pattern {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.1;
+            background-image: 
+                radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.2) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(120, 119, 198, 0.2) 0%, transparent 50%);
+            z-index: -1;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+
+        .main-card {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--card-shadow);
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+            padding: 30px;
+            text-align: center;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .card-header h2 {
+            font-size: 1.8rem;
+            color: var(--text-primary);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .card-header p {
+            color: var(--text-secondary);
+            font-size: 1rem;
+        }
+
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin-top: 15px;
+        }
+
+        .status-online {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+
+        .status-offline {
+            background: #fed7d7;
+            color: #742a2a;
+        }
+
+        .form-section {
+            padding: 40px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            position: relative;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 15px 20px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: var(--transition);
+            background: #f7fafc;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            background: white;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            transform: translateY(-1px);
+        }
+
+        .input-icon {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+            pointer-events: none;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 18px;
+            background: var(--bg-gradient);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+
+        .flash-messages {
+            margin-bottom: 20px;
+        }
+
+        .flash-message {
+            padding: 15px 20px;
+            margin-bottom: 15px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 500;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .flash-success {
+            background: #c6f6d5;
+            color: #22543d;
+            border-left: 4px solid var(--success-color);
+        }
+
+        .flash-error {
+            background: #fed7d7;
+            color: #742a2a;
+            border-left: 4px solid var(--error-color);
+        }
+
+        .flash-warning {
+            background: #fef5e7;
+            color: #744210;
+            border-left: 4px solid var(--warning-color);
+        }
+
+        .result-section {
+            margin-top: 30px;
+            padding: 30px;
+            background: linear-gradient(135deg, #f8f9ff 0%, #f0f4ff 100%);
+            border-radius: 15px;
+            border: 1px solid rgba(102, 126, 234, 0.1);
+            animation: fadeInUp 0.5s ease-out;
+        }
+
+        .cluster-card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            border: 2px solid transparent;
+            transition: var(--transition);
+        }
+
+        .cluster-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .cluster-icon {
+            font-size: 2rem;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+
+        .cluster-info h3 {
+            font-size: 1.4rem;
+            color: var(--text-primary);
+            margin-bottom: 5px;
+        }
+
+        .cluster-info .cluster-id {
+            background: #e2e8f0;
+            color: var(--text-secondary);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .cluster-details {
+            display: grid;
+            gap: 15px;
+        }
+
+        .detail-item {
+            padding: 15px;
+            background: #f7fafc;
+            border-radius: 8px;
+            border-left: 4px solid;
+        }
+
+        .detail-item h4 {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .detail-item p {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .input-summary {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .summary-item {
+            text-align: center;
+        }
+
+        .summary-item .value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        .summary-item .label {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            color: rgba(255,255,255,0.8);
+            font-size: 0.9rem;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .form-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .input-summary {
+                flex-direction: column;
+                gap: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="background-pattern"></div>
+    
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-chart-pie"></i> RFM Customer Analytics</h1>
+            <p>Segmentação inteligente de clientes baseada em Recência, Frequência e Valor Monetário</p>
+        </div>
+
+        <div class="main-card">
+            <div class="card-header">
+                <h2>
+                    <i class="fas fa-users"></i>
+                    Análise de Segmentação
+                </h2>
+                <p>Descubra o perfil comportamental dos seus clientes e otimize suas estratégias de marketing</p>
+                
+                {% if models_available %}
+                    <div class="status-indicator status-online">
+                        <i class="fas fa-check-circle"></i>
+                        Sistema Online - Modelos Carregados
+                    </div>
+                {% else %}
+                    <div class="status-indicator status-offline">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Sistema Offline - Modelos Não Disponíveis
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="flash-messages">
+                        {% for category, message in messages %}
+                            <div class="flash-message flash-{{ category }}">
+                                {% if category == 'success' %}
+                                    <i class="fas fa-check-circle"></i>
+                                {% elif category == 'error' %}
+                                    <i class="fas fa-exclamation-circle"></i>
+                                {% else %}
+                                    <i class="fas fa-info-circle"></i>
+                                {% endif %}
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            <div class="form-section">
+                <form method="POST" id="rfmForm">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="recency_manual">
+                                <i class="fas fa-calendar-alt"></i>
+                                Recência (dias)
+                            </label>
+                            <input type="number" 
+                                   id="recency_manual" 
+                                   name="recency_manual" 
+                                   required 
+                                   min="0" 
+                                   max="{{ config.VALIDATION_RULES.recency.max }}"
+                                   placeholder="Ex: 30">
+                            <small>Dias desde a última compra (0-{{ config.VALIDATION_RULES.recency.max }})</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="frequency_manual">
+                                <i class="fas fa-shopping-cart"></i>
+                                Frequência (pedidos)
+                            </label>
+                            <input type="number" 
+                                   id="frequency_manual" 
+                                   name="frequency_manual" 
+                                   required 
+                                   min="1" 
+                                   max="{{ config.VALIDATION_RULES.frequency.max }}"
+                                   placeholder="Ex: 5">
+                            <small>Número total de pedidos (1-{{ config.VALIDATION_RULES.frequency.max }})</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="monetary_manual">
+                                <i class="fas fa-pound-sign"></i>
+                                Valor Monetário (£)
+                            </label>
+                            <input type="number" 
+                                   id="monetary_manual" 
+                                   name="monetary_manual" 
+                                   step="0.01" 
+                                   required 
+                                   min="0.01" 
+                                   max="{{ config.VALIDATION_RULES.monetary.max }}"
+                                   placeholder="Ex: 150.50">
+                            <small>Valor total gasto (£0.01-£{{ config.VALIDATION_RULES.monetary.max }})</small>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="submit-btn" {% if not models_available %}disabled{% endif %}>
+                        <i class="fas fa-magic"></i>
+                        Analisar Segmento do Cliente
+                    </button>
+                </form>
+
+                <!-- Resultado da Predição -->
+                {% if prediction_result %}
+                    <div class="result-section">
+                        <div class="cluster-card">
+                            <div class="cluster-header">
+                                <div class="cluster-icon" style="background-color: {{ prediction_result.cluster_info.color }}">
+                                    {{ prediction_result.cluster_info.icon }}
+                                </div>
+                                <div class="cluster-info">
+                                    <h3>{{ prediction_result.cluster_info.name }}</h3>
+                                    <span class="cluster-id">Cluster {{ prediction_result.cluster_id }}</span>
+                                </div>
+                            </div>
+
+                            <div class="cluster-details">
+                                <div class="detail-item" style="border-left-color: {{ prediction_result.cluster_info.color }}">
+                                    <h4><i class="fas fa-info-circle"></i> Descrição</h4>
+                                    <p>{{ prediction_result.cluster_info.description }}</p>
+                                </div>
+
+                                <div class="detail-item" style="border-left-color: {{ prediction_result.cluster_info.color }}">
+                                    <h4><i class="fas fa-chart-bar"></i> Características</h4>
+                                    <p>{{ prediction_result.cluster_info.characteristics }}</p>
+                                </div>
+
+                                <div class="detail-item" style="border-left-color: {{ prediction_result.cluster_info.color }}">
+                                    <h4><i class="fas fa-lightbulb"></i> Estratégia Recomendada</h4>
+                                    <p>{{ prediction_result.cluster_info.strategy }}</p>
+                                </div>
+                            </div>
+
+                            <div class="input-summary">
+                                <div class="summary-item">
+                                    <div class="value">{{ prediction_result.input_data.recency }}</div>
+                                    <div class="label">Dias</div>
+                                </div>
+                                <div class="summary-item">
+                                    <div class="value">{{ prediction_result.input_data.frequency }}</div>
+                                    <div class="label">Pedidos</div>
+                                </div>
+                                <div class="summary-item">
+                                    <div class="value">£{{ "%.2f"|format(prediction_result.input_data.monetary) }}</div>
+                                    <div class="label">Valor Total</div>
+                                </div>
+                            </div>
+
+                            <div style="text-align: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid #e2e8f0;">
+                                <small style="color: var(--text-secondary);">
+                                    <i class="fas fa-clock"></i>
+                                    Análise realizada em {{ prediction_result.timestamp }}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Seção de Informações dos Clusters -->
+        <div class="main-card" style="margin-top: 30px;">
+            <div class="card-header">
+                <h2>
+                    <i class="fas fa-info-circle"></i>
+                    Guia de Segmentos RFM
+                </h2>
+                <p>Conheça os diferentes tipos de clientes identificados pelo sistema</p>
+            </div>
+            
+            <div style="padding: 30px;">
+                <div style="display: grid; gap: 20px;">
+                    {% for cluster_id, cluster_info in cluster_definitions.items() %}
+                        <div class="cluster-card" style="border-left: 4px solid {{ cluster_info.color }};">
+                            <div class="cluster-header">
+                                <div class="cluster-icon" style="background-color: {{ cluster_info.color }}; width: 50px; height: 50px; font-size: 1.5rem;">
+                                    {{ cluster_info.icon }}
+                                </div>
+                                <div class="cluster-info">
+                                    <h3 style="font-size: 1.2rem;">{{ cluster_info.name }}</h3>
+                                    <span class="cluster-id">Cluster {{ cluster_id }}</span>
+                                </div>
+                            </div>
+                            
+                            <div style="margin-left: 65px;">
+                                <p style="color: var(--text-secondary); margin-bottom: 10px;">{{ cluster_info.description }}</p>
+                                <div style="display: flex; gap: 15px; font-size: 0.9rem;">
+                                    <span style="color: var(--text-primary);"><strong>Características:</strong> {{ cluster_info.characteristics }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>
+                <i class="fas fa-shield-alt"></i>
+                RFM Customer Analytics - Powered by Machine Learning
+            </p>
+            <p style="margin-top: 10px; font-size: 0.8rem; opacity: 0.7;">
+                Desenvolvido para otimizar estratégias de marketing e relacionamento com clientes
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Adiciona validação em tempo real
+        document.getElementById('rfmForm').addEventListener('submit', function(e) {
+            const recency = document.getElementById('recency_manual').value;
+            const frequency = document.getElementById('frequency_manual').value;
+            const monetary = document.getElementById('monetary_manual').value;
+
+            if (!recency || !frequency || !monetary) {
+                e.preventDefault();
+                alert('Por favor, preencha todos os campos obrigatórios.');
+                return false;
+            }
+
+            // Adiciona loading ao botão
+            const submitBtn = document.querySelector('.submit-btn');
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analisando...';
+            submitBtn.disabled = true;
+        });
+
+        // Animação suave para os elementos
+        document.addEventListener('DOMContentLoaded', function() {
+            const cards = document.querySelectorAll('.cluster-card');
+            cards.forEach((card, index) => {
+                card.style.animationDelay = `${index * 0.1}s`;
+                card.classList.add('fadeInUp');
+            });
+        });
+
+        // Adiciona tooltips informativos
+        const inputs = document.querySelectorAll('input[type="number"]');
+        inputs.forEach(input => {
+            input.addEventListener('focus', function() {
+                this.style.transform = 'scale(1.02)';
+            });
+            
+            input.addEventListener('blur', function() {
+                this.style.transform = 'scale(1)';
+            });
+        });
+
+        // Validação de entrada em tempo real
+        document.getElementById('recency_manual').addEventListener('input', function() {
+            const value = parseInt(this.value);
+            const max = {{ config.VALIDATION_RULES.recency.max }};
+            if (value > max) {
+                this.setCustomValidity(`Recência não pode ser maior que ${max} dias`);
+            } else {
+                this.setCustomValidity('');
+            }
+        });
+
+        document.getElementById('frequency_manual').addEventListener('input', function() {
+            const value = parseInt(this.value);
+            const max = {{ config.VALIDATION_RULES.frequency.max }};
+            if (value > max) {
+                this.setCustomValidity(`Frequência não pode ser maior que ${max} pedidos`);
+            } else {
+                this.setCustomValidity('');
+            }
+        });
+
+        document.getElementById('monetary_manual').addEventListener('input', function() {
+            const value = parseFloat(this.value);
+            const max = {{ config.VALIDATION_RULES.monetary.max }};
+            if (value > max) {
+                this.setCustomValidity(`Valor monetário não pode ser maior que £${max}`);
+            } else {
+                this.setCustomValidity('');
+            }
+        });
+    </script>
+</body>
+</html>
