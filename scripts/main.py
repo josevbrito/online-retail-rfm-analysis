@@ -51,7 +51,7 @@ def main():
     
     # Plotando a curva do cotovelo
     try:
-        plot_elbow_curve(wcss, max_clusters=10, save_path="models/elbow_curve.png")
+        plot_elbow_curve(wcss, max_clusters=10, save_path="images/elbow_curve.png")
     except:
         print("Aviso: Não foi possível plotar a curva do cotovelo (matplotlib pode não estar configurado)")
     
@@ -74,7 +74,7 @@ def main():
     print("\nArquivos gerados:")
     print("- models/rfm_scaler.pkl")
     print("- models/rfm_kmeans_model.pkl")
-    print("- models/elbow_curve.png")
+    print("- images/elbow_curve.png")
 
 
 def test_inference(scaler, kmeans_model):
